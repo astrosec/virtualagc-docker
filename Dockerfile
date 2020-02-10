@@ -20,7 +20,8 @@ RUN apt-get install -y --no-install-recommends libgtk2.0-0
 RUN apt-get install -y --no-install-recommends libgtk2.0-common
 RUN apt-get install -y --no-install-recommends libwxgtk3.0-dev
 RUN apt-get install -y --no-install-recommends git
-RUN git clone https://github.com/virtualagc/virtualagc.git
+#RUN git clone https://github.com/virtualagc/virtualagc.git
+RUN git clone https://github.com/astrosec/virtualagc.git
 RUN cd virtualagc && make
 #Entry point runs at docker container startup
 ADD doit.sh /
