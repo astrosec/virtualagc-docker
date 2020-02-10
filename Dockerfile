@@ -6,12 +6,11 @@ RUN apt-get install -y apt-utils
 RUN apt-get install -y --no-install-recommends software-properties-common
 RUN add-apt-repository -y ppa:allegro/5.2
 RUN apt-get update
-RUN apt-get install -y liballegro5.2
-RUN apt-get install -y liballegro5-dev
 RUN apt-get install -y gcc
 RUN apt-get install -y g++
-RUN apt-get install -y libsdl1.2debian
-RUN apt-get install -y libsdl-dev
+RUN apt-get install -y gdb
+RUN apt-get install -y libsdl2-dev
+RUN apt-get install -y liballegro4-dev
 RUN apt-get install -y --no-install-recommends vim
 RUN apt-get install -y --no-install-recommends make
 RUN apt-get install -y --no-install-recommends python
@@ -25,7 +24,8 @@ RUN git clone https://github.com/virtualagc/virtualagc.git
 RUN cd virtualagc && make
 #Entry point runs at docker container startup
 ADD doit.sh /
+RUN chmod 777 doit.sh
 ENTRYPOINT ["/doit.sh"]
-#CMD args are passed to ENTRYOINT command and is overwritten when you pass your own args to docker
+#CMD args are passed to ENTRYPOINT command and is overwritten when you pass your own args to docker
 #CMD ["-c"]
 EXPOSE 19698
