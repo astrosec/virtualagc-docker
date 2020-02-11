@@ -11,6 +11,8 @@ RUN apt-get install -y g++
 RUN apt-get install -y gdb
 RUN apt-get install -y libsdl2-dev
 RUN apt-get install -y liballegro4-dev
+RUN apt-get install -y --no-install-recommends net-tools 
+RUN apt-get install -y --no-install-recommends netcat
 RUN apt-get install -y --no-install-recommends vim
 RUN apt-get install -y --no-install-recommends make
 RUN apt-get install -y --no-install-recommends python
@@ -29,4 +31,5 @@ RUN chmod 777 doit.sh
 ENTRYPOINT ["/doit.sh"]
 #CMD args are passed to ENTRYPOINT command and is overwritten when you pass your own args to docker
 #CMD ["-c"]
+EXPOSE 19697
 EXPOSE 19698
