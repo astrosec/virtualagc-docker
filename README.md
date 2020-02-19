@@ -28,10 +28,15 @@
 * docker ps (gather the container id)
 * docker exec -it <container id like 87917890f14d) /bin/bash
 
-# In the docker container
-* DISPLAY=10.20.2.86:0.0
+# In the docker container to run the DSKY (Apollo Computer Keyboard/Display)
+* DISPLAY=10.20.2.86:0.0 # Replace IP with your X server and make sure it is reachable
 * export DISPLAY
 * cd virtualagc/yaDSKY2
 * ./yaDSKY2
+
+# You can also connect remotely to the yaAGC (Apollo Guidance Computer)
+* From a machine with yaDSKY
+* cd virtualagc/yaDSKY2
+* ./yaDSKY2 --host <ip of your yaAGC> 
 
 
