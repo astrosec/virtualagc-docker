@@ -108,6 +108,6 @@ int main(int argc, char **argv)
 		i &= 0x00007fff;
 		Value &= 0x00007fff;
 	}
-	printf("Value %o %o\n", Value, i);
+	printf("Key Value %o %o\n", Value, i);
 	return 0;
 }
