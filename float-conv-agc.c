@@ -16,7 +16,7 @@
 double ScaleFactor(char *s)
 {
 	int n;
-	printf("Scalefactor %s\n", s);
+	//printf("Scalefactor %s\n", s);
 	if (*s == 0)
 		return (1.0);
 
@@ -47,17 +47,17 @@ int main(int argc, char **argv)
 	double tmpval;
 	int Sign, Value, i;
 
-	printf("argc is %d\n", argc);
 	if(2==argc) {
-		operand = argv[1];
+		fraction = argv[1];
 	} 
 	else
 	{
 		fraction = getenv("DEPLOY_ENV");
-		//max value for whole number is 15
-                sprintf(tmpoperand, "%s.%s\n", whole, fraction); 
-		operand = tmpoperand;
 	}
+
+	//max value for whole number is 15
+	sprintf(tmpoperand, "%s.%s\n", whole, fraction); 
+	operand = tmpoperand;
 
 	char default_operand[] = "3.141592653";
 	if(NULL==operand)
@@ -66,9 +66,9 @@ int main(int argc, char **argv)
 	}
 
 
-	printf("Input operand %s\n", operand);
+	//printf("Input operand %s\n", operand);
 	floatpoint = strtod(operand, NULL);
-	printf("In Floating point %f\n", floatpoint);
+	//printf("In Floating point %f\n", floatpoint);
 
 	x = floatpoint * ScaleFactor(mod1) * ScaleFactor(" ");
 	// Convert to 1's complement format.
