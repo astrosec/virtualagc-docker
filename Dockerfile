@@ -9,7 +9,7 @@ RUN apt-get update
 RUN apt-get install -y gcc
 RUN apt-get install -y g++
 RUN apt-get install -y gdb
-RUN apt-get install -y libsdl2-dev
+RUN apt-get install -y libsdl-dev
 RUN apt-get install -y liballegro4-dev
 RUN apt-get install -y --no-install-recommends net-tools 
 RUN apt-get install -y --no-install-recommends netcat
@@ -27,6 +27,8 @@ RUN git clone https://github.com/astrosec/virtualagc.git
 RUN cd virtualagc && make
 #Entry point runs at docker container startup
 ADD doit.sh /
+ARG KEY_VAR
+ENV DEPLOY_ENV=${KEY_VAR}
 RUN chmod 777 doit.sh
 ENTRYPOINT ["/doit.sh"]
 #CMD args are passed to ENTRYPOINT command and is overwritten when you pass your own args to docker
