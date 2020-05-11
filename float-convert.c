@@ -1,6 +1,6 @@
 #include <stdio.h>
-#include <stdlib.h>		/* strtod */
-#include <math.h>		/* pow */
+#include <stdlib.h> /* strtod */
+#include <math.h>	/* pow */
 
 //Converts from floating point to AGC native octal representation
 //Inputs are floating point numbers with a mantissa
@@ -8,7 +8,7 @@
 
 //--- 2DEC: (original) operand="3.141592653" mod1="B-4" mod2="" extra=""
 //--- 2DEC: (modified) operand="3.141593" mod1="B-4" mod2=""
-//060455,000703: 27,3355           06220 37553  PI/16              2DEC     3.141592653 B-4         
+//060455,000703: 27,3355           06220 37553  PI/16              2DEC     3.141592653 B-4
 
 //-------------------------------------------------------------------------
 // Converts a string like "E+-n" or "B+-n" to a scale factor.
@@ -17,28 +17,28 @@ double ScaleFactor(char *s)
 {
 	int n;
 	double scalefactor = 0;
-        if(NULL == s)
-        {
-	   scalefactor = 1.0;
-	   return scalefactor;
+	if (NULL == s)
+	{
+		scalefactor = 1.0;
+		return scalefactor;
 	}
-        
+
 	if (*s == 0)
-                scalefactor = 1.0;
-        else
-	if (*s == 'E') {
+		scalefactor = 1.0;
+	else if (*s == 'E')
+	{
 		n = atoi(s + 1);
-		scalefactor =  (pow(10.0, n));
+		scalefactor = (pow(10.0, n));
 	}
-        else
-	if (*s == 'B') {
+	else if (*s == 'B')
+	{
 		n = atoi(s + 1);
 		scalefactor = (pow(2.0, n));
 	}
-        else
-            scalefactor = 1.0;
+	else
+		scalefactor = 1.0;
 
-        printf("scalefactor is %f\n", scalefactor);
+	printf("scalefactor is %f\n", scalefactor);
 	return (scalefactor);
 }
 
@@ -49,7 +49,7 @@ int main(int argc, char **argv)
 {
 	char *operand = NULL;
 	//char mod1[] = "B-4";
-        char *mod1;
+	char *mod1;
 	char *whole = "3";
 	char *fraction = NULL;
 	char tmpoperand[256] = {0};
@@ -58,53 +58,59 @@ int main(int argc, char **argv)
 	double tmpval;
 	int Sign, Value, i;
 
-	if(2==argc) {
+	if (2 == argc)
+	{
 		fraction = argv[1];
-	} 
+	}
 	else
 	{
 		fraction = getenv("DEPLOY_ENV");
 	}
 
-        mod1=argv[2];
+	mod1 = argv[2];
 
 	//max value for whole number is 15
-	//sprintf(tmpoperand, "%s.%s\n", whole, fraction); 
+	//sprintf(tmpoperand, "%s.%s\n", whole, fraction);
 	//operand = tmpoperand;
 	operand = argv[1];
 
 	char default_operand[] = "3.141592653";
-	if(NULL==operand)
-	{ 
-		operand = default_operand; 
+	if (NULL == operand)
+	{
+		operand = default_operand;
 	}
-
 
 	printf("Input operand %s\n", operand);
 	floatpoint = strtod(operand, NULL);
 	printf("In Floating point %f\n", floatpoint);
 
 	x = floatpoint * ScaleFactor(mod1) * ScaleFactor(" ");
-        printf("x is %f \n", x);
+	printf("x is %f \n", x);
 	// Convert to 1's complement format.
 	Sign = 0;
-	if (operand[0] == '-') {
+	if (operand[0] == '-')
+	{
 		// x < 0
 		Sign = 1;
 		x = -x;
 	}
 
-	if (fmod(x, 1.0) == 0.0) {
+	if (fmod(x, 1.0) == 0.0)
+	{
 		// Integer: just convert directly to octal.
 		Value = (int)x;
-	} else {
+	}
+	else
+	{
 		// Floating point: scale. FP numbers > 1.0 are an error.
 		if (x >= 1.0)
 			return (1);
 
-		for (Value = 0, i = 0; i < 28; i++) {
+		for (Value = 0, i = 0; i < 28; i++)
+		{
 			Value = Value << 1;
-			if (x >= 0.5) {
+			if (x >= 0.5)
+			{
 				Value++;
 				x -= 0.5;
 			}
@@ -117,7 +123,8 @@ int main(int argc, char **argv)
 
 	i = Value & 0x00003fff;
 	Value = (Value >> 14) & 0x00003fff;
-	if (Sign) {
+	if (Sign)
+	{
 		Value = ~Value;
 		i = ~i;
 		i &= 0x00007fff;
