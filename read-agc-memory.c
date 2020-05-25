@@ -59,12 +59,12 @@ int Last11 = 0;
 int R1Sign = 0;
 int R2Sign = 0;
 int R3Sign = 0;
+
 typedef enum
 {
     false,
     true
 } bool;
-
 
 char DefaultHostname[16];
 int ServerSocket = -1;
@@ -119,7 +119,7 @@ typedef enum RegisterDigit
 #define PORT 19698
 #define SOCKET_ERROR -1
 #define SOCKET_BROKEN (errno == EPIPE)
-#define PULSE_INTERVAL 80
+#define PULSE_INTERVAL 500
 
 //--------------------------------------------------------------------------------
 // This function can take an i/o channel number and a 15-bit value for it, and
@@ -134,7 +134,7 @@ typedef enum RegisterDigit
 // ... Later, the 9-bit "Channel" is actually the u-bit plus an 8-bit channel
 // number, but the function works the same.
 
-int FormIoPacket(int Channel, int Value, unsigned char *Packet)
+int FormIoPacket(int Channel, unsigned Value, unsigned char *Packet)
 {
     if (Channel < 0 || Channel > 0x1ff)
         return (1);
@@ -142,6 +142,7 @@ int FormIoPacket(int Channel, int Value, unsigned char *Packet)
         return (1);
     if (Packet == NULL)
         return (1);
+
     Packet[0] = Channel >> 3;
     Packet[1] = 0x40 | ((Channel << 3) & 0x38) | ((Value >> 12) & 0x07);
     Packet[2] = 0x80 | ((Value >> 6) & 0x3F);
@@ -154,13 +155,13 @@ int FormIoPacket(int Channel, int Value, unsigned char *Packet)
 
 int makeConnection();
 
-void OutputKeycode(int Keycode)
+void OutputKeycode(unsigned Keycode)
 {
     unsigned char Packet[4] = {0};
     int j = 0;
 
     //simulate human typing speed
-    msleep(600);
+    msleep(PULSE_INTERVAL);
 
     if (ServerSocket != -1)
     {
@@ -171,7 +172,6 @@ void OutputKeycode(int Keycode)
             close(ServerSocket);
             ServerSocket = -1;
         }
-        //printf("Send packet\n");
     }
 }
 
@@ -195,6 +195,7 @@ int ParseIoPacket(unsigned char *Packet, int *Channel, int *Value, int *uBit)
     *Value =
         ((Packet[1] << 12) & 0x7000) | ((Packet[2] << 6) & 0x0FC0) |
         (Packet[3] & 0x003F);
+
     *uBit = (0x20 & Packet[0]);
     return (0);
 }
@@ -388,7 +389,10 @@ void DisplayRegister(char *registerdigits)
             registerdigits[2], registerdigits[3], registerdigits[4]);
 
     unsigned octalval = strtol(newoctalstring, NULL, 8);
-    printf("0%8o\n", octalval);
+
+    //printf("octal string is %s\n", newoctalstring);
+
+    printf("## %08o\n", octalval);
 }
 
 void ActOnIncomingIO(unsigned char *Packet)
@@ -408,7 +412,7 @@ void ActOnIncomingIO(unsigned char *Packet)
             return;
 
         ParseIoPacket(Packet, &Channel, &Value, &uBit);
-        //printf("Just read the packet Value is 0x%08X\n", Value);
+        //printf("Just read the packet Value is %08o\n", Value);
     }
     else
     {
@@ -419,6 +423,7 @@ void ActOnIncomingIO(unsigned char *Packet)
     // DSKY as far as input is concerned.
     if (Channel == 010)
     {
+
         // 7-segment display management.
         switch (Value & 0x7800)
         {
@@ -436,19 +441,19 @@ void ActOnIncomingIO(unsigned char *Packet)
             NOUN_DIGITS[1] = GetRightDigit(Value);
             break;
         case 0x4000: // AAAA=8 //register one
-            //printf ("RR1D1\n");
+            //printf("RR1D1 Display Value is %08o\n", Value);
             REGISTER1_DIGITS[0] = GetRightDigit(Value);
             break;
 
         case 0x3800: // AAAA=7
-            //printf ("LR1D2, RR1D3\n");
+            //printf("LR1D2, RR1D3 Display Value is %08o\n", Value);
             REGISTER1_DIGITS[1] = GetLeftDigit(Value);
             REGISTER1_DIGITS[2] = GetRightDigit(Value);
             break;
 
             //Fixed memory read results appear in Register 1
         case 0x3000: // AAAA=6
-            //printf ("LR1D4, RR1D5\n");
+            //printf("LR1D4, RR1D5 Display Value is %08o\n", Value);
             REGISTER1_DIGITS[3] = GetLeftDigit(Value);
             REGISTER1_DIGITS[4] = GetRightDigit(Value);
             break;
@@ -631,15 +636,16 @@ void OutputNoun()
 
 void OutputZero()
 {
-    OutputKeycode(16);
+    OutputKeycode(020);
 }
 
 void OutputEnter()
 {
     OutputKeycode(28);
+    msleep(500);
 }
 
-void OutputOnethroughNine(int number)
+void OutputOnethroughNine(unsigned number)
 {
     OutputKeycode(number);
 }
@@ -667,11 +673,11 @@ void QueryMemoryTest()
     OutputEnter();
 }
 
-void QueryFixedMemory(int memval)
+void QueryFixedMemory(unsigned memval)
 {
     int i = 0;
-    int value = 0;
-    int octarray[5] = {0};
+    unsigned value = 0;
+    unsigned octarray[5] = {0};
 
     OutputVerb();
     OutputOnethroughNine(2);
@@ -685,17 +691,16 @@ void QueryFixedMemory(int memval)
     {
         value = memval % 8;
         octarray[i] = value;
-        //int temp;
-        //C /= A is equivalent to C = C / A
-        //temp = memval / 8;
-        //memval = temp;
-        //memval = (memval /= 8);
         memval /= 8;
     }
 
     for (i = 4; i > -1; i--)
     {
-        OutputOnethroughNine(octarray[i]);
+        //The zero key is special
+        if (0 == octarray[i])
+            OutputZero();
+        else
+            OutputOnethroughNine(octarray[i]);
     }
 
     OutputEnter();
@@ -716,7 +721,6 @@ void *doit(void *id)
     do
     {
         makeConnection();
-        //msleep (PULSE_INTERVAL);
     } while (1);
 }
 
@@ -724,7 +728,7 @@ void *doit(void *id)
 int main(int argc, char *argv[])
 {
     pthread_t CheckAGC;
-    int memtoread = 0;
+    unsigned memtoread = 0;
     char memtoread_str[6] = {0};
 
     int err = pthread_create(&CheckAGC, NULL, doit, (void *)1);
@@ -755,8 +759,8 @@ int main(int argc, char *argv[])
 
     sleep(3);
 
-    //int i = memtoread;
-    for (int i = memtoread; i < 077777; i++)
+    //for (unsigned i = memtoread; i < 077777; i++)
+    for (unsigned i = memtoread; i < 57363; i++)
     {
         printf("Reading %05o, %05o\n", i, i - 054000);
         QueryFixedMemory(i);
