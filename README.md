@@ -1,9 +1,10 @@
 # virtualagc-docker
-* Dockerfile and other scripts to dockerize the Apollo Guidance Computer
+* Original Dockerfile and other scripts to dockerize the Apollo Guidance Computer
+* Used for the Hack-a-Sat Apollo Guidance Computer Challenge
 
-* make sure doit.sh is executable, run the following as root
 
 ## 1. Build the image
+* make sure doit.sh is executable, run the following as root
 * docker build -t virtualagc2 .
 
 ## 2. Run it
