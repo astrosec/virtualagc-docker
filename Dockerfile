@@ -1,37 +1,38 @@
-FROM ubuntu:16.04
-RUN apt-get update -y
-RUN apt-get install -y --no-install-recommends wget ca-certificates
-RUN wget -qO - http://www.dotdeb.org/dotdeb.gpg | apt-key add -
-RUN apt-get install -y apt-utils
-RUN apt-get install -y --no-install-recommends software-properties-common
-RUN add-apt-repository -y ppa:allegro/5.2
-RUN apt-get update
-RUN apt-get install -y gcc
-RUN apt-get install -y g++
-RUN apt-get install -y gdb
-RUN apt-get install -y libsdl-dev
-RUN apt-get install -y liballegro4-dev
-RUN apt-get install -y --no-install-recommends net-tools 
-RUN apt-get install -y --no-install-recommends netcat
-RUN apt-get install -y --no-install-recommends vim
-RUN apt-get install -y --no-install-recommends make
-RUN apt-get install -y --no-install-recommends python
-RUN apt-get install -y --no-install-recommends libncurses5
-RUN apt-get install -y --no-install-recommends libncurses5-dev
-RUN apt-get install -y --no-install-recommends libgtk2.0-0
-RUN apt-get install -y --no-install-recommends libgtk2.0-common
-RUN apt-get install -y --no-install-recommends libwxgtk3.0-dev
-RUN apt-get install -y --no-install-recommends git
-#RUN git clone https://github.com/virtualagc/virtualagc.git
-RUN git clone https://github.com/astrosec/virtualagc.git
-RUN cd virtualagc && make
-#Entry point runs at docker container startup
+# Hack-a-Sat Apollo Guidance Computer challenge — modernized build.
+#
+# Same challenge as the 2020 original (preserved at tag hackasat-final):
+# the value of PI in Comanche 055's TIME_OF_FREE_FALL.agc is replaced with
+# a secret key and the rope reassembled at container start; contestants
+# recover the key by reading AGC memory through the DSKY interface.
+#
+# Modernized: current Debian base, Virtual AGC source pinned to an exact
+# commit, minimal build (yaAGC + yaYUL only — connect yaDSKY2 from the
+# host instead of X11-forwarding it out of the container), and the AGC
+# starts automatically instead of requiring a manual launch.
+
+FROM debian:bookworm-slim
+
+ARG VIRTUALAGC_REPO=https://github.com/virtualagc/virtualagc
+ARG VIRTUALAGC_COMMIT=414514149737a5b2c14bba399f85dd4d96195774
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        ca-certificates git gcc g++ gdb make libncurses-dev \
+        python3 vim-tiny netcat-openbsd \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN git init virtualagc \
+    && cd virtualagc \
+    && git remote add origin "${VIRTUALAGC_REPO}" \
+    && git fetch --depth 1 origin "${VIRTUALAGC_COMMIT}" \
+    && git checkout --detach FETCH_HEAD
+
+RUN cd virtualagc && make yaAGC yaYUL
+
 ADD doit.sh /
+RUN chmod 0755 /doit.sh
+
 ARG KEY_VAR
 ENV DEPLOY_ENV=${KEY_VAR}
-RUN chmod 777 doit.sh
+
 ENTRYPOINT ["/doit.sh"]
-#CMD args are passed to ENTRYPOINT command and is overwritten when you pass your own args to docker
-#CMD ["-c"]
 EXPOSE 19697
-EXPOSE 19698

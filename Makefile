@@ -1,13 +1,18 @@
-all : read-agc get-double-fromagc float-convert
+CC ?= cc
+
+all : read-agc get-double-fromagc float-convert float-conv-agc
 
 read-agc : read-agc-memory.c
-	clang -o read-agc -Wall read-agc-memory.c -l pthread
+	$(CC) -o read-agc -Wall read-agc-memory.c -l pthread
 
 get-double-fromagc : get-double-fromagc.c
-	clang -o get-double-fromagc -Wall get-double-fromagc.c
+	$(CC) -o get-double-fromagc -Wall get-double-fromagc.c
 
 float-convert : float-convert.c
-	clang -o float-convert -Wall float-convert.c
+	$(CC) -o float-convert -Wall float-convert.c
 
-clean : 
-	rm read-agc get-double-fromagc float-convert
+float-conv-agc : float-conv-agc.c
+	$(CC) -o float-conv-agc -Wall float-conv-agc.c
+
+clean :
+	rm -f read-agc get-double-fromagc float-convert float-conv-agc

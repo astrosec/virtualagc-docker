@@ -1,43 +1,59 @@
-# virtualagc-docker
-* Original Dockerfile and other scripts to dockerize the Apollo Guidance Computer
-* Used for the Hack-a-Sat Apollo Guidance Computer Challenge
+# Hack-a-Sat Apollo Guidance Computer Challenge
 
+The AGC challenge from Hack-a-Sat, kept workable on modern systems. The
+original 2020 files are preserved unchanged at the `hackasat-final` tag; this
+branch is the same challenge on a current base image with a pinned Virtual AGC
+source and an auto-starting AGC.
 
-## 1. Build the image
-* make sure doit.sh is executable, run the following as root
-* docker build -t virtualagc2 .
+## The challenge
 
-## 2. Run it
-* seccomp unconfined is needed so the joystick driver in the allegro library won't crash with ASLR...  
-* Use -p to work with EXPOSE directive and make those ports available outside the docker host
+At container start, the value of PI in Comanche 055's `TIME_OF_FREE_FALL.agc`
+is replaced with a secret key (`3.141592653` becomes `3.<key>`), PI's memory
+address is shifted by a random number of decoy constants, and the rope is
+reassembled with yaYUL. The container then boots the real Apollo 11 Command
+Module software on yaAGC and serves the DSKY channel protocol on port 19697.
 
-* docker run --rm -it -p19698:19698 -p19697:19697 --security-opt seccomp=unconfined virtualagc2 unshare --map-rt-user --user /bin/bash
+Contestants connect a DSKY, locate PI in erasable/fixed memory, read out the
+AGC double-precision octal words, and convert them back to recover the key.
+The solver utilities in this repository (`float-conv-agc`, `float-convert`,
+`get-double-fromagc`, `read-agc-memory`) demonstrate the conversions.
 
-## 3. Exec into it
+## Run it
 
-# Bonus--Forward X display to your host and run yaDSKY2 control panel
+```sh
+./start-challenge.sh            # random key
+./start-challenge.sh 987654321  # chosen key
+```
 
-* For macOS install XQuartz and on Linux it should work by default.  
-* for XQuartz allow remote connections 
-* XQuartz->X11 Preferences->Authenticate connections (checked)
-* XQuartz->X11 Preferences->Allow connections from network clients (checked)
-* Open an xterm on the host
-* xhost +        (allow connections from all X clients)
+The script builds `float-conv-agc`, prints the key and the AGC octal
+representation contestants should find (the expected solution), builds the
+image, and starts the container with the AGC listening on port 19697.
 
-# In your host VM (where docker lives)
-* docker run --rm -it -p19698:19698 -p19697:19697 --security-opt seccomp=unconfined virtualagc2 unshare --map-rt-user --user /bin/bash
-* docker ps (gather the container id)
-* docker exec -it <container id like 87917890f14d) /bin/bash
+Connect a DSKY from your host (no X11 forwarding needed):
 
-# In the docker container to run the DSKY (Apollo Computer Keyboard/Display)
-* DISPLAY=10.20.2.86:0.0 # Replace IP with your X server and make sure it is reachable
-* export DISPLAY
-* cd virtualagc/yaDSKY2
-* ./yaDSKY2
+```sh
+yaDSKY2 --host=127.0.0.1 --port=19697
+```
 
-# You can also connect remotely to the yaAGC (Apollo Guidance Computer)
-* From a machine with yaDSKY
-* cd virtualagc/yaDSKY2
-* ./yaDSKY2 --host <ip of your yaAGC> 
+For the original interactive-shell behavior (patch the ROM but start a shell
+instead of the AGC):
 
+```sh
+docker run --rm -it -p 19697:19697 -e DEPLOY_ENV=987654321 \
+  -e CHALLENGE_SHELL=1 hackasat-agc
+```
 
+## Notes on the modernization
+
+- Base image ubuntu:16.04 → debian:bookworm-slim; the dotdeb/allegro/wx/GTK
+  setup is gone because only yaAGC and yaYUL are built (the GUI tools were
+  never needed inside the container — connect yaDSKY2 remotely).
+- The Virtual AGC source is fetched at a pinned commit instead of an
+  unpinned clone, so the challenge builds the same way every time.
+- `--security-opt seccomp=unconfined` and the `unshare` invocation are no
+  longer needed (they worked around the allegro joystick driver, which is no
+  longer present).
+- The missing `float-conv-agc` Makefile rule is fixed, and the build uses
+  `cc` rather than hardcoded clang.
+- The reference copy of the original patched `TIME_OF_FREE_FALL.agc` remains
+  in the repository root.
