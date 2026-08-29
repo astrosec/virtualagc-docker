@@ -1,0 +1,39 @@
+name: build
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  build-and-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: Build image
+        run: |
+          docker build \
+            --build-arg "PACKAGING_GIT_COMMIT=${GITHUB_SHA}" \
+            -t fortneptune/virtualagc:ci .
+
+      - name: Boot Luminary 099 and run the smoke test
+        run: |
+          docker run -d --rm --name agc-smoke -p 19697:19697 fortneptune/virtualagc:ci
+          python3 tests/smoke_test.py 127.0.0.1 19697 smoke-events.jsonl
+          docker stop agc-smoke
+
+      - name: Boot Comanche 055 (selection check)
+        run: |
+          docker run -d --rm --name agc-cm -p 19698:19697 \
+            -e AGC_SOFTWARE=Comanche055 fortneptune/virtualagc:ci
+          python3 tests/smoke_test.py 127.0.0.1 19698 smoke-events-cm.jsonl
+          docker stop agc-cm
+
+      - name: Upload smoke event logs
+        if: always()
+        uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
+        with:
+          name: smoke-event-logs
+          path: smoke-events*.jsonl
+          if-no-files-found: ignore
